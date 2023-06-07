@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>KYC Solution</title>
+</head>
+<body>
+    <h1>Record Audio/Video</h1>
+    
+    <button id="startBtn">Start Recording</button>
+    <button id="stopBtn">Stop Recording</button>
+    <video id="videoPreview" autoplay></video>
+    
+    <script>
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const videoPreview = document.getElementById('videoPreview');
+        let mediaRecorder;
+        let chunks = [];
+
+        startBtn.addEventListener('click', () => {
+            navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+                .then(stream => {
+                    videoPreview.srcObject = stream;
+                    mediaRecorder = new MediaRecorder(stream);
+
+                    mediaRecorder.ondataavailable = e => {
+                        chunks.push(e.data);
+                    };
+
+                    mediaRecorder.start();
+                });
+        });
+
+        stopBtn.addEventListener('click', () => {
+            mediaRecorder.stop();
+        });
+
+        mediaRecorder.addEventListener('stop', () => {
+            const blob = new Blob(chunks, { type: 'video/webm' });
+
+            const formData = new FormData();
+            formData.append('file', blob, 'recorded_video.webm');
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.text())
+            .then(data => {
+                console.log(data);
+            });
+        });
+    </script>
+</body>
+</html>
